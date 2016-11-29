@@ -1,6 +1,5 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-    }
-}
+pub mod discovery;
+
+extern crate mdns;
+
+extern crate uuid;
