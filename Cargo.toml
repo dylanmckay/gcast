@@ -6,3 +6,4 @@ authors = ["Dylan McKay <dylanmckay34@gmail.com>"]
 [dependencies]
 mdns = "0.1.2"
 uuid = "0.3"
+error-chain = "0.6"

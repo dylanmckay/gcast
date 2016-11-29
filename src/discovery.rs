@@ -1,3 +1,4 @@
+use Error;
 use mdns;
 
 use std::net::Ipv4Addr;
@@ -13,7 +14,7 @@ pub struct Device
 }
 
 /// Performs Cast discovery.
-pub fn run<F>(mut f: F) -> Result<(), mdns::Error>
+pub fn run<F>(mut f: F) -> Result<(), Error>
     where F: FnMut(Device)  {
     let duration = Duration::from_secs(5);
 
@@ -40,6 +41,6 @@ pub fn run<F>(mut f: F) -> Result<(), mdns::Error>
             uuid: uuid,
         })
 
-    }).expect("error while performing Chromecast discovery");
+    })?;
     Ok(())
 }
