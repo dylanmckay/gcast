@@ -1,7 +1,7 @@
-extern crate cast;
+extern crate gcast;
 
 fn main() {
-    cast::discovery::run(|device| {
+    gcast::discovery::run(|device| {
         println!("device: {:#?}", device);
     }).unwrap();
 }
