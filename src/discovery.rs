@@ -7,7 +7,7 @@ use std::time::Duration;
 use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Device
+pub struct DeviceInfo
 {
     pub ip_addr: Ipv4Addr,
     pub uuid: Uuid,
@@ -15,7 +15,7 @@ pub struct Device
 
 /// Performs Cast discovery.
 pub fn run<F>(mut f: F) -> Result<(), Error>
-    where F: FnMut(Device)  {
+    where F: FnMut(DeviceInfo)  {
     let duration = Duration::from_secs(5);
 
     mdns::discover("_googlecast._tcp.local", Some(duration), |response| {
@@ -36,7 +36,7 @@ pub fn run<F>(mut f: F) -> Result<(), Error>
 
         let uuid = uuid_str.unwrap().parse().expect("invalid device UUID");
 
-        f(Device {
+        f(DeviceInfo {
             ip_addr: address.unwrap(),
             uuid: uuid,
         })
