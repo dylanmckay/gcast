@@ -17,16 +17,32 @@ fn main() {
         let mut io = gcast::back::net::Io::new().unwrap();
         let mut connection = gcast::back::Connection::connect_to(&device_info, &mut io).unwrap();
 
-        let mut message = back::protocol::CastMessage::new();
+        // Establish a virtual connection
+        {
+            let mut message = back::protocol::CastMessage::new();
 
-        message.set_protocol_version(back::protocol::CastMessage_ProtocolVersion::CASTV2_1_0);
-        message.set_source_id("sender-0".to_owned());
-        message.set_destination_id("receiver-0".to_owned());
-        message.set_namespace("urn:x-cast:com.google.cast.tp.connection".to_owned());
-        message.set_payload_type(back::protocol::CastMessage_PayloadType::STRING);
-        message.set_payload_utf8("{ \"type\": \"CONNECT\" }".to_owned());
+            message.set_protocol_version(back::protocol::CastMessage_ProtocolVersion::CASTV2_1_0);
+            message.set_source_id("sender-0".to_owned());
+            message.set_destination_id("receiver-0".to_owned());
+            message.set_namespace("urn:x-cast:com.google.cast.tp.connection".to_owned());
+            message.set_payload_type(back::protocol::CastMessage_PayloadType::STRING);
+            message.set_payload_utf8("{ \"type\": \"CONNECT\" }".to_owned());
 
-        connection.send(&message).unwrap();
+            connection.send(&message).unwrap();
+        }
+
+        {
+            let mut message = back::protocol::CastMessage::new();
+
+            message.set_protocol_version(back::protocol::CastMessage_ProtocolVersion::CASTV2_1_0);
+            message.set_source_id("sender-0".to_owned());
+            message.set_destination_id("receiver-0".to_owned());
+            message.set_namespace("urn:x-cast:com.google.cast.receiver".to_owned());
+            message.set_payload_type(back::protocol::CastMessage_PayloadType::STRING);
+            message.set_payload_utf8("{ \"type\": \"GET_STATUS\" }".to_owned());
+
+            connection.send(&message).unwrap();
+        }
 
         io.poll.poll(&mut io.events, None).unwrap();
 
