@@ -14,10 +14,8 @@ pub struct DeviceInfo
 }
 
 /// Performs Cast discovery.
-pub fn run<F>(mut f: F) -> Result<(), Error>
+pub fn run<F>(duration: Duration, mut f: F) -> Result<(), Error>
     where F: FnMut(DeviceInfo)  {
-    let duration = Duration::from_secs(5);
-
     mdns::discover("_googlecast._tcp.local", Some(duration), |response| {
         if response.records().next().is_none() { return };
 

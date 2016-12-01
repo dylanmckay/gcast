@@ -1,14 +1,15 @@
 use Error;
-
 use discovery;
+use back::net;
 
+use std::collections::VecDeque;
 use std::io::prelude::*;
 use std::mem;
 use std;
 
 use mio;
 
-use byteorder::{ByteOrder, BigEndian};
+use byteorder::{ByteOrder, BigEndian, WriteBytesExt};
 
 const CAST_PORT: u16 = 8009;
 
@@ -18,8 +19,14 @@ type RawPacket = Vec<u8>;
 
 pub struct Transport
 {
+    token: mio::Token,
     stream: mio::tcp::TcpStream,
     reader: Reader,
+
+    /// The packets that we have received so far.
+    received_packets: VecDeque<RawPacket>,
+    /// The packets we need to send.
+    queued_packets: VecDeque<RawPacket>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -41,29 +48,64 @@ enum Reader
 
 impl Transport
 {
-    pub fn new(stream: mio::tcp::TcpStream) -> Self {
-        Transport { stream: stream, reader: Reader::new() }
+    pub fn new(stream: mio::tcp::TcpStream,
+               io: &mut net::Io) -> Result<Self, Error> {
+        let token = io.create_token();
+
+        io.poll.register(&stream, token,
+                         mio::Ready::readable() | mio::Ready::writable(),
+                         mio::PollOpt::edge())?;
+
+        Ok(Transport {
+            token: token,
+            stream: stream,
+            reader: Reader::new(),
+            received_packets: VecDeque::new(),
+            queued_packets: VecDeque::new(),
+        })
     }
 
     /// Connect to a Cast device that was discovered/
-    pub fn connect_to(device: &discovery::DeviceInfo) -> Result<Self, Error> {
+    pub fn connect_to(device: &discovery::DeviceInfo,
+                      io: &mut net::Io) -> Result<Self, Error> {
         let ip_addr = std::net::IpAddr::V4(device.ip_addr);
         let socket_addr = std::net::SocketAddr::new(ip_addr, CAST_PORT);
 
         let stream = mio::tcp::TcpStream::connect(&socket_addr)?;
 
-        Ok(Transport::new(stream))
+        Transport::new(stream, io)
     }
 
-    pub fn write(&mut self, data: &[u8]) -> Result<(), Error> {
-        self.stream.write(data)?;
+    pub fn send(&mut self, data: Vec<u8>) -> Result<(), Error> {
+        self.queued_packets.push_back(data);
         Ok(())
     }
 
-    pub fn read(&mut self) -> Result<Vec<Vec<u8>>, Error> {
-        let mut packets = Vec::new();
-        self.reader.read(&mut self.stream, &mut packets)?;
-        Ok(packets)
+    pub fn receive(&mut self) -> ::std::collections::vec_deque::Drain<Vec<u8>> {
+        self.received_packets.drain(..)
+    }
+
+    pub fn handle_event(&mut self, event: mio::Event)
+        -> Result<(), Error> {
+        if event.token() == self.token {
+            if event.kind().is_readable() {
+                println!("socket is readable, reading packets now");
+
+                let mut packets = Vec::new();
+                self.reader.read(&mut self.stream, &mut packets)?;
+                self.received_packets.extend(packets);
+            }
+
+            if event.kind().is_writable() {
+                if let Some(raw_packet) = self.queued_packets.pop_front() {
+                    println!("socket is writable and we have a queued packet, sending");
+
+                    self.stream.write_u32::<BigEndian>(raw_packet.len() as u32)?;
+                    self.stream.write(&raw_packet)?;
+                }
+            }
+        }
+        Ok(())
     }
 }
 

@@ -2,11 +2,20 @@ extern crate gcast;
 
 use gcast::back;
 
-fn main() {
-    gcast::discovery::run(|device_info| {
-        println!("discovered device: {:#?}", device_info);
+use std::time::Duration;
 
-        let mut connection = gcast::back::Connection::connect_to(&device_info).unwrap();
+fn main() {
+    let poll_duration = Duration::from_secs(1);
+    let mut cast_device_infos = Vec::new();
+
+    gcast::discovery::run(poll_duration, |device_info| {
+        println!("discovered device: {:#?}", device_info);
+        cast_device_infos.push(device_info);
+    }).unwrap();
+
+    for device_info in cast_device_infos {
+        let mut io = gcast::back::net::Io::new().unwrap();
+        let mut connection = gcast::back::Connection::connect_to(&device_info, &mut io).unwrap();
 
         let mut message = back::protocol::CastMessage::new();
 
@@ -18,5 +27,17 @@ fn main() {
         message.set_payload_utf8("{ \"type\": \"CONNECT\" }".to_owned());
 
         connection.send(&message).unwrap();
-    }).unwrap();
+
+        io.poll.poll(&mut io.events, None).unwrap();
+
+        loop {
+            for event in io.events.iter() {
+                connection.handle_event(event).unwrap();
+
+                for packet in connection.receive() {
+                    println!("packet: {:#?}", packet);
+                }
+            }
+        }
+    }
 }
