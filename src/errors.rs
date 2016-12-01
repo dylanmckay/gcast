@@ -5,5 +5,6 @@ error_chain! {
 
     foreign_links {
         ::mdns::Error, Dns;
+        ::std::io::Error, Io;
     }
 }

@@ -12,5 +12,7 @@ keywords = ["cast", "chromecast"]
 
 [dependencies]
 mdns = "0.1.2"
+mio = "0.6"
 uuid = "0.3"
 error-chain = "0.6"
+byteorder = "0.5"
