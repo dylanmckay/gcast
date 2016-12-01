@@ -1,5 +1,5 @@
 //! Networking related code.
 
-pub use self::connection::Connection;
+pub use self::transport::Transport;
 
-pub mod connection;
+pub mod transport;

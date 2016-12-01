@@ -16,9 +16,10 @@ const CAST_PORT: u16 = 8009;
 type SizePrefix = u32;
 type RawPacket = Vec<u8>;
 
-pub struct Connection
+pub struct Transport
 {
     stream: mio::tcp::TcpStream,
+    reader: Reader,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -38,10 +39,10 @@ enum Reader
     },
 }
 
-impl Connection
+impl Transport
 {
     pub fn new(stream: mio::tcp::TcpStream) -> Self {
-        Connection { stream: stream }
+        Transport { stream: stream, reader: Reader::new() }
     }
 
     /// Connect to a Cast device that was discovered/
@@ -51,7 +52,18 @@ impl Connection
 
         let stream = mio::tcp::TcpStream::connect(&socket_addr)?;
 
-        Ok(Connection::new(stream))
+        Ok(Transport::new(stream))
+    }
+
+    pub fn write(&mut self, data: &[u8]) -> Result<(), Error> {
+        self.stream.write(data)?;
+        Ok(())
+    }
+
+    pub fn read(&mut self) -> Result<Vec<Vec<u8>>, Error> {
+        let mut packets = Vec::new();
+        self.reader.read(&mut self.stream, &mut packets)?;
+        Ok(packets)
     }
 }
 

@@ -6,5 +6,6 @@ error_chain! {
     foreign_links {
         ::mdns::Error, Dns;
         ::std::io::Error, Io;
+        ::protobuf::error::ProtobufError, Protobuf;
     }
 }
