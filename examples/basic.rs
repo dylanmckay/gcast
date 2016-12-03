@@ -2,19 +2,6 @@ extern crate gcast;
 
 use std::time::Duration;
 
-#[allow(dead_code)]
-fn discover() -> Vec<gcast::DeviceInfo> {
-    let poll_duration = Duration::from_secs(3);
-    let mut cast_device_infos = Vec::new();
-
-    gcast::discovery::run(poll_duration, |device_info| {
-        println!("discovered device: {:#?}", device_info);
-        cast_device_infos.push(device_info);
-    }).unwrap();
-
-    cast_device_infos
-}
-
 fn main() {
     let device_info = gcast::DeviceInfo {
         ip_addr: "192.168.1.102".parse().unwrap(),
