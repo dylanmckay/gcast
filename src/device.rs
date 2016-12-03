@@ -1,4 +1,4 @@
-use {DeviceInfo, Status, Event, Error};
+use {DeviceInfo, ApplicationId, Status, Event, Error};
 use back;
 
 use std::collections::VecDeque;
@@ -53,18 +53,16 @@ impl Device
         Ok(Device::new(info, connection))
     }
 
-    /// Launch the YouTube app.
-    pub fn launch_youtube(&mut self) -> Result<(), Error> {
+    pub fn launch(&mut self, app_id: ApplicationId) -> Result<(), Error> {
         self.connection.send(&back::protocol::Message {
             source: back::protocol::EndpointName("sender-0".to_owned()),
             destination: back::protocol::EndpointName("receiver-0".to_owned()),
             namespace: back::protocol::namespace::receiver(),
             kind: back::protocol::MessageKind::Launch {
-                app_id: "YouTube".to_owned(),
+                app_id: app_id,
                 request_id: 1,
             },
         })
-
     }
 
     /// Handle an IO event.

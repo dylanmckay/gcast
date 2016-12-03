@@ -1,4 +1,4 @@
-use {Status, Error, ErrorKind};
+use {Status, ApplicationId, Error, ErrorKind};
 
 use wire;
 
@@ -47,7 +47,7 @@ pub enum MessageKind
     /// Tell the Cast device to launch an application.
     Launch {
         /// An application identifier.
-        app_id: String,
+        app_id: ApplicationId,
         /// A request identifier.
         request_id: i64,
     },
@@ -141,11 +141,11 @@ impl Message
                 message.set_payload_type(wire::CastMessage_PayloadType::STRING);
                 message.set_payload_utf8(json::stringify(object! {
                     "type" => "LAUNCH",
-                    "appId" => &app_id[..],
+                    "appId" => &app_id.0[..],
                     "requestId" => request_id
                 }));
             },
-            MessageKind::ReceiverStatus { .. } => unimplemented!(),
+            MessageKind::ReceiverStatus(..) => unimplemented!(),
         }
 
         message

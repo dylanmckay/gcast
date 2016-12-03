@@ -25,7 +25,7 @@ fn main() {
     let mut device = gcast::Device::connect(device_info, &mut io).unwrap();
 
     /// Launch the YouTube app.
-    device.launch_youtube().unwrap();
+    device.launch(gcast::apps::youtube()).unwrap();
 
     'poll_loop: loop {
         io.poll.poll(&mut io.events, Some(Duration::from_millis(200))).unwrap();

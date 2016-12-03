@@ -1,4 +1,4 @@
-use Error;
+use {ApplicationId, Error};
 
 use std::fmt;
 
@@ -8,10 +8,6 @@ use json;
 /// A float value in [0..1] that represents the magnitude of volume.
 #[derive(Clone, PartialEq)]
 pub struct VolumeLevel(pub f32);
-
-/// An identifier for an application.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ApplicationId(pub String);
 
 /// Stores the status of a Cast receiver.
 #[derive(Clone, Debug, PartialEq)]
@@ -129,7 +125,9 @@ impl fmt::Debug for VolumeLevel
 mod test
 {
     use super::*;
+    use ApplicationId;
     use json;
+    use uuid::Uuid;
 
     fn parse_text(object: &str) -> Status {
         let json = json::parse(object).unwrap();

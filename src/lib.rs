@@ -3,7 +3,7 @@
 pub use self::errors::{Error, ErrorKind};
 pub use self::discovery::DeviceInfo;
 pub use self::device::Device;
-pub use self::back::protocol::{Status, Volume, VolumeLevel};
+pub use self::back::protocol::{ApplicationId, Status, Volume, VolumeLevel};
 pub use self::event::Event;
 
 pub mod discovery;
@@ -11,6 +11,7 @@ pub mod errors;
 pub mod back;
 pub mod device;
 pub mod event;
+pub mod apps;
 
 extern crate mdns;
 extern crate mio;

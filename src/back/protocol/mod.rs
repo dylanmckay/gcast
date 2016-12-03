@@ -17,6 +17,10 @@ extern crate error_chain;
 #[macro_use]
 extern crate json;
 
+/// An identifier for an application.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ApplicationId(pub String);
+
 /// Namespace definition constants.
 pub mod namespace {
     use super::Namespace;
