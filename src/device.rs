@@ -84,8 +84,9 @@ impl Device
                         kind: back::protocol::MessageKind::Pong,
                     }).expect("failed to send PONG");
                 },
-                back::protocol::MessageKind::ReceiverStatus { status }=> {
-                    println!("receiver status: {}", status);
+                back::protocol::MessageKind::ReceiverStatus(status) => {
+                    println!("receiver status: {:#?}", status);
+                    self.status = Some(status);
                 },
                 msg => {
                     println!("received message: {:?}", msg);

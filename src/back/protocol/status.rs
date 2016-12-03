@@ -31,6 +31,30 @@ pub struct Volume
     pub step_interval: VolumeLevel,
 }
 
+impl Status
+{
+    /// Reads the status from the payload of a `RECEIVER_STATUS` message.
+    pub fn from_json(status: &json::JsonValue) -> Result<Self, Error> {
+        let volume = Volume::from_json(&status["volume"])?;
+
+        Ok(Status {
+            volume: volume,
+        })
+    }
+}
+
+impl Volume
+{
+    pub fn from_json(volume: &json::JsonValue) -> Result<Self, Error> {
+        Ok(Volume {
+            control_type: volume["controlType"].as_str().expect("controlType is missing or not a string").to_owned(),
+            level: VolumeLevel(volume["level"].as_f32().expect("level is missing or not a float")),
+            muted: volume["muted"].as_bool().expect("muted is missing or not a bool"),
+            step_interval: VolumeLevel(volume["stepInterval"].as_f32().expect("stepInterval is missing or not a float")),
+        })
+    }
+}
+
 impl VolumeLevel
 {
     /// Gets the volume percentage.
@@ -42,6 +66,6 @@ impl VolumeLevel
 impl fmt::Debug for VolumeLevel
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "{:0}", self.percentage())
+        write!(fmt, "{:0}%", self.percentage())
     }
 }

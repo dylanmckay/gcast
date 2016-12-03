@@ -1,4 +1,4 @@
-use {Error, ErrorKind};
+use {Status, Error, ErrorKind};
 
 use wire;
 
@@ -20,7 +20,7 @@ pub struct Namespace(pub String);
 pub struct EndpointName(pub String);
 
 /// A CASTV2 message.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct Message
 {
     /// The sender ID of the message.
@@ -31,7 +31,7 @@ pub struct Message
 }
 
 /// A message variant.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub enum MessageKind
 {
     /// Create a virtual connection.
@@ -52,9 +52,7 @@ pub enum MessageKind
         request_id: i64,
     },
     /// Tell the sender about the current receiver status.
-    ReceiverStatus {
-        status: String,
-    },
+    ReceiverStatus(Status),
 }
 
 impl Message
@@ -81,9 +79,9 @@ impl Message
                     "GET_STATUS" => MessageKind::GetStatus,
                     "LAUNCH" => unimplemented!(),
                     "RECEIVER_STATUS" => {
-                        MessageKind::ReceiverStatus {
-                            status: message.get_payload_utf8().to_string(),
-                        }
+                        let status_data = &data["status"];
+                        let status = Status::from_json(&status_data)?;
+                        MessageKind::ReceiverStatus(status)
                     },
                     _ => return Err(ErrorKind::UnknownMessageType(type_name.to_owned()).into()),
                 }
