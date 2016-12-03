@@ -64,7 +64,7 @@ impl Transport
 
         io.poll.register(&stream, token,
                          mio::Ready::writable() | mio::Ready::readable() | mio::Ready::hup(),
-                         mio::PollOpt::edge())?;
+                         mio::PollOpt::level())?;
 
         Ok(Transport {
             token: token,
@@ -111,8 +111,6 @@ impl Transport
                     let mut packets = Vec::new();
                     self.reader.read(stream, &mut packets)?;
                     self.received_packets.extend(packets);
-                } else {
-                    panic!("foo");
                 }
             }
 
@@ -145,6 +143,8 @@ impl Transport
                     },
                     Stream::Connected(mut stream) => {
                         if let Some(raw_packet) = self.queued_packets.pop_front() {
+                            println!("sending packet");
+
                             stream.write_u32::<BigEndian>(raw_packet.len() as u32)?;
                             stream.write(&raw_packet)?;
                         }

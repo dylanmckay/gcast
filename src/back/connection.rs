@@ -2,7 +2,6 @@ use Error;
 use discovery;
 use back::{net, protocol};
 
-use protobuf::Message;
 use protobuf;
 use mio;
 
@@ -23,15 +22,19 @@ impl Connection
 
     /// Sends a packet through the connection.
     pub fn send(&mut self, message: &protocol::Message) -> Result<(), Error> {
+        use protobuf::Message;
+
         let bytes = message.as_wire_message().write_to_bytes()?;
         self.transport.send(bytes)?;
         Ok(())
     }
 
     /// Consumes all packets that have been received.
-    pub fn receive(&mut self) -> Result<::std::vec::IntoIter<protocol::wire::CastMessage>, Error> {
-        let result: Result<Vec<protocol::wire::CastMessage>, _> = self.transport.receive().map(|raw_packet| {
-            protobuf::parse_from_bytes(&raw_packet)
+    pub fn receive(&mut self) -> Result<::std::vec::IntoIter<protocol::Message>, Error> {
+        let result: Result<Vec<protocol::Message>, Error> = self.transport.receive().map(|raw_packet| {
+            let wire_message: protocol::wire::CastMessage = protobuf::parse_from_bytes(&raw_packet)?;
+            let message = protocol::Message::from_wire_message(&wire_message)?;
+            Ok(message)
         }).collect();
 
         Ok(result?.into_iter())

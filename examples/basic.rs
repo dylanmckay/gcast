@@ -30,7 +30,7 @@ fn main() {
     connection.send(&back::protocol::Message {
         source: back::protocol::EndpointName("sender-0".to_owned()),
         destination: back::protocol::EndpointName("receiver-0".to_owned()),
-        namespace: back::protocol::Namespace("urn:x-cast:com.google.cast.tp.connection".to_owned()),
+        namespace: back::protocol::namespace::connection(),
         kind: back::protocol::MessageKind::Connect,
     }).expect("failed to send CONNECT");
 
@@ -38,12 +38,23 @@ fn main() {
     connection.send(&back::protocol::Message {
         source: back::protocol::EndpointName("sender-0".to_owned()),
         destination: back::protocol::EndpointName("receiver-0".to_owned()),
-        namespace: back::protocol::Namespace("urn:x-cast:com.google.cast.tp.connection".to_owned()),
+        namespace: back::protocol::namespace::receiver(),
         kind: back::protocol::MessageKind::GetStatus,
     }).expect("failed to send CONNECT");
 
+    /// Launch the YouTube app.
+    connection.send(&back::protocol::Message {
+        source: back::protocol::EndpointName("sender-0".to_owned()),
+        destination: back::protocol::EndpointName("receiver-0".to_owned()),
+        namespace: back::protocol::namespace::receiver(),
+        kind: back::protocol::MessageKind::Launch {
+            app_id: "YouTube".to_owned(),
+            request_id: 1,
+        },
+    }).expect("failed to send LAUNCH");
+
     'poll_loop: loop {
-        io.poll.poll(&mut io.events, None).unwrap();
+        io.poll.poll(&mut io.events, Some(Duration::from_millis(200))).unwrap();
 
         for event in io.events.iter()  {
             if event.kind().is_hup() {
@@ -51,9 +62,26 @@ fn main() {
             }
 
             connection.handle_event(event).unwrap();
+        }
 
-            for packet in connection.receive().unwrap() {
-                println!("packet: {:#?}", packet);
+        for message in connection.receive().unwrap() {
+            match message.kind {
+                back::protocol::MessageKind::Ping => {
+                    println!("received PING, responding with PONG: {:#?}", message);
+
+                    connection.send(&back::protocol::Message {
+                        source: message.destination.clone(),
+                        destination: message.source.clone(),
+                        namespace: message.namespace.clone(),
+                        kind: back::protocol::MessageKind::Pong,
+                    }).expect("failed to send PONG");
+                },
+                back::protocol::MessageKind::ReceiverStatus { status }=> {
+                    println!("receiver status: {}", status);
+                },
+                msg => {
+                    println!("received message: {:?}", msg);
+                },
             }
         }
     }

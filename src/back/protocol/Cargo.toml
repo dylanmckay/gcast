@@ -15,3 +15,4 @@ path = "mod.rs"
 
 [dependencies]
 gcast-wire = { path = "wire" }
+json = "0.11"
