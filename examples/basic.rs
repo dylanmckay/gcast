@@ -30,12 +30,20 @@ fn main() {
     'poll_loop: loop {
         io.poll.poll(&mut io.events, Some(Duration::from_millis(200))).unwrap();
 
-        for event in io.events.iter()  {
-            if event.kind().is_hup() {
+        for io_event in io.events.iter()  {
+            if io_event.kind().is_hup() {
                 break 'poll_loop;
             }
 
-            device.handle_event(event).unwrap();
+            device.handle_io(io_event).unwrap();
+        }
+
+        for event in device.events() {
+            match event {
+                gcast::Event::StatusUpdated => {
+                    println!("device status updated: {:?}", device.status());
+                },
+            }
         }
     }
 

@@ -1,7 +1,13 @@
-use {DeviceInfo, Status, Error};
+use {DeviceInfo, Status, Event, Error};
 use back;
 
+use std::collections::VecDeque;
+use std;
+
 use mio;
+
+/// If the internal event queue gets too big, truncate the oldest events.
+const EVENT_QUEUE_MAXIMUM_COUNT: usize = 500;
 
 /// A Cast device.
 pub struct Device
@@ -14,6 +20,8 @@ pub struct Device
     status: Option<Status>,
     /// The network connection.
     connection: back::Connection,
+    /// A queue that holds the events that have occurred on this device.
+    event_queue: VecDeque<Event>,
 }
 
 impl Device
@@ -25,6 +33,7 @@ impl Device
             info: info,
             connection: connection,
             status: None,
+            event_queue: VecDeque::new(),
         }
     }
 
@@ -59,9 +68,14 @@ impl Device
     }
 
     /// Handle an IO event.
-    pub fn handle_event(&mut self, event: mio::Event) -> Result<(), Error> {
+    pub fn handle_io(&mut self, event: mio::Event) -> Result<(), Error> {
         self.connection.handle_event(event)?;
         self.process_incoming()
+    }
+
+    /// Consumes all of the events that have occurred on this device.
+    pub fn events(&mut self) -> VecDeque<Event> {
+        std::mem::replace(&mut self.event_queue, VecDeque::new())
     }
 
     /// Gets information about the Cast device.
@@ -85,8 +99,8 @@ impl Device
                     }).expect("failed to send PONG");
                 },
                 back::protocol::MessageKind::ReceiverStatus(status) => {
-                    println!("receiver status: {:#?}", status);
                     self.status = Some(status);
+                    self.add_event(Event::StatusUpdated);
                 },
                 msg => {
                     println!("received message: {:?}", msg);
@@ -95,5 +109,13 @@ impl Device
         }
 
         Ok(())
+    }
+
+    fn add_event(&mut self, event: Event) {
+        self.event_queue.push_back(event);
+
+        if self.event_queue.len() > EVENT_QUEUE_MAXIMUM_COUNT {
+            self.event_queue.drain(EVENT_QUEUE_MAXIMUM_COUNT-1..);
+        }
     }
 }
