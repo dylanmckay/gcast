@@ -28,26 +28,26 @@ fn main() {
 
     // Establish a virtual connection
     {
-        let mut message = back::protocol::CastMessage::new();
+        let mut message = back::protocol::wire::CastMessage::new();
 
-        message.set_protocol_version(back::protocol::CastMessage_ProtocolVersion::CASTV2_1_0);
+        message.set_protocol_version(back::protocol::wire::CastMessage_ProtocolVersion::CASTV2_1_0);
         message.set_source_id("sender-0".to_owned());
         message.set_destination_id("receiver-0".to_owned());
         message.set_namespace("urn:x-cast:com.google.cast.tp.connection".to_owned());
-        message.set_payload_type(back::protocol::CastMessage_PayloadType::STRING);
+        message.set_payload_type(back::protocol::wire::CastMessage_PayloadType::STRING);
         message.set_payload_utf8("{ \"type\": \"CONNECT\" }".to_owned());
 
         connection.send(&message).unwrap();
     }
 
     {
-        let mut message = back::protocol::CastMessage::new();
+        let mut message = back::protocol::wire::CastMessage::new();
 
-        message.set_protocol_version(back::protocol::CastMessage_ProtocolVersion::CASTV2_1_0);
+        message.set_protocol_version(back::protocol::wire::CastMessage_ProtocolVersion::CASTV2_1_0);
         message.set_source_id("sender-0".to_owned());
         message.set_destination_id("receiver-0".to_owned());
         message.set_namespace("urn:x-cast:com.google.cast.receiver".to_owned());
-        message.set_payload_type(back::protocol::CastMessage_PayloadType::STRING);
+        message.set_payload_type(back::protocol::wire::CastMessage_PayloadType::STRING);
         message.set_payload_utf8("{ \"type\": \"GET_STATUS\" }".to_owned());
 
         connection.send(&message).unwrap();

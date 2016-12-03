@@ -1,0 +1,19 @@
+[package]
+name = "gcast-wire"
+version = "0.1.0"
+authors = ["Dylan McKay <dylanmckay34@gmail.com>"]
+
+description = "A library for using Google Cast devices"
+license = "MIT"
+documentation = "https://docs.rs/gcast-wire"
+repository = "https://github.com/dylanmckay/cast"
+
+keywords = ["cast", "chromecast", "protobuf"]
+
+build = "build.rs"
+
+[lib]
+path = "mod.rs"
+
+[dependencies]
+protobuf = "1.0.24"

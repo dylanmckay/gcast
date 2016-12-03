@@ -1,1 +1,1 @@
-pub mod wire;
+pub extern crate gcast_wire as wire;
