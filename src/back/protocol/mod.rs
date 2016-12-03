@@ -11,6 +11,7 @@ pub mod status;
 pub mod errors;
 
 extern crate protobuf;
+extern crate uuid;
 #[macro_use]
 extern crate error_chain;
 #[macro_use]

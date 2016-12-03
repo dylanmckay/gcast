@@ -5,6 +5,7 @@ error_chain! {
 
     foreign_links {
         ::protobuf::error::ProtobufError, Protobuf;
+        ::uuid::ParseError, UuidParseError;
     }
 
     errors {
