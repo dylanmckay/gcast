@@ -22,8 +22,8 @@ impl Connection
     }
 
     /// Sends a packet through the connection.
-    pub fn send(&mut self, message: &protocol::wire::CastMessage) -> Result<(), Error> {
-        let bytes = message.write_to_bytes()?;
+    pub fn send(&mut self, message: &protocol::Message) -> Result<(), Error> {
+        let bytes = message.as_wire_message().write_to_bytes()?;
         self.transport.send(bytes)?;
         Ok(())
     }
