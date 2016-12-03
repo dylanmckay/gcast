@@ -6,4 +6,6 @@
 
 [Documentation](https://docs.rs/gcast)
 
+[Protocol description](PROTOCOL.md)
+
 A Rust library for communicating with Google Cast devices.
