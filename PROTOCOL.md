@@ -43,12 +43,14 @@ the size of the message, and then the raw message itself.
 
 ## Mid level
 
-Cast messages are described using the [protobuf](https://developers.google.com/protocol-buffers)
-library.
+Cast messages are described using the [protobuf](https://developers.google.com/protocol-buffers) library.
+
+The full protobuf definition can be found at `extensions/common/api/cast_channel` in the Chromium
+[source tree](https://chromium.googlesource.com/chromium/src.git/+/master/extensions/common/api/cast_channel).
 
 The message definition looks like this
 
-```
+```protobuf
 message CastMessage {
   enum ProtocolVersion {
     CASTV2_1_0 = 0;
