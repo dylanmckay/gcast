@@ -22,15 +22,15 @@ impl Connection
     }
 
     /// Sends a packet through the connection.
-    pub fn send(&mut self, message: &protocol::CastMessage) -> Result<(), Error> {
+    pub fn send(&mut self, message: &protocol::wire::CastMessage) -> Result<(), Error> {
         let bytes = message.write_to_bytes()?;
         self.transport.send(bytes)?;
         Ok(())
     }
 
     /// Consumes all packets that have been received.
-    pub fn receive(&mut self) -> Result<::std::vec::IntoIter<protocol::CastMessage>, Error> {
-        let result: Result<Vec<protocol::CastMessage>, _> = self.transport.receive().map(|raw_packet| {
+    pub fn receive(&mut self) -> Result<::std::vec::IntoIter<protocol::wire::CastMessage>, Error> {
+        let result: Result<Vec<protocol::wire::CastMessage>, _> = self.transport.receive().map(|raw_packet| {
             protobuf::parse_from_bytes(&raw_packet)
         }).collect();
 
