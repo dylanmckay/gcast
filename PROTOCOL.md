@@ -29,6 +29,10 @@ At the lowest level, just above TCP, the CASTV2 protocol is transmitted over
 
 The Cast device itself uses a self-signed certificate for verification.
 
+You may run into problems if your TLS library automatically rejects self-signed
+certificates. You must explicitly allow them in order to complete a successful
+TLS handshake.
+
 ### Raw protocol
 
 Just above SSL, data is transmitted in discrete packets named "messages".
