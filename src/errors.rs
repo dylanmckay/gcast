@@ -1,3 +1,5 @@
+//! Error type definitions.
+
 error_chain! {
     types {
         Error, ErrorKind;

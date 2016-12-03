@@ -1,3 +1,5 @@
+//! The core `Device` type.
+
 use {DeviceInfo, ApplicationId, Status, Event, Error};
 use back;
 

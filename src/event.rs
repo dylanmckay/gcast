@@ -1,3 +1,5 @@
+//! Events that occur on Cast devices.
+
 /// An event that occurred on a device.
 #[derive(Clone, Debug)]
 pub enum Event

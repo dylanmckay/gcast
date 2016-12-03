@@ -1,3 +1,5 @@
+//! Utilities for performing mDNS discovery of Cast devices.
+
 use Error;
 use mdns;
 
