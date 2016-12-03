@@ -4,10 +4,11 @@ use back::net;
 
 use std::collections::VecDeque;
 use std::io::prelude::*;
-use std::mem;
+use std::{mem, io};
 use std;
 
 use mio;
+use openssl::ssl;
 
 use byteorder::{ByteOrder, BigEndian, WriteBytesExt};
 
@@ -20,13 +21,22 @@ type RawPacket = Vec<u8>;
 pub struct Transport
 {
     token: mio::Token,
-    stream: mio::tcp::TcpStream,
+    stream: Stream,
     reader: Reader,
 
     /// The packets that we have received so far.
     received_packets: VecDeque<RawPacket>,
     /// The packets we need to send.
     queued_packets: VecDeque<RawPacket>,
+}
+
+enum Stream
+{
+    /// HACK TO APPEASE THE BORROW CHECKER.
+    None,
+    /// Waiting for the connection to be established.
+    PendingConnected(mio::tcp::TcpStream),
+    Connected(ssl::SslStream<mio::tcp::TcpStream>),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -53,12 +63,12 @@ impl Transport
         let token = io.create_token();
 
         io.poll.register(&stream, token,
-                         mio::Ready::readable() | mio::Ready::writable(),
+                         mio::Ready::writable() | mio::Ready::readable() | mio::Ready::hup(),
                          mio::PollOpt::edge())?;
 
         Ok(Transport {
             token: token,
-            stream: stream,
+            stream: Stream::PendingConnected(stream),
             reader: Reader::new(),
             received_packets: VecDeque::new(),
             queued_packets: VecDeque::new(),
@@ -85,25 +95,66 @@ impl Transport
         self.received_packets.drain(..)
     }
 
+    pub fn update(&mut self) {
+        if let Stream::Connected(ref mut stream) = self.stream {
+            let mut packets = Vec::new();
+            self.reader.read(stream, &mut packets).unwrap();
+            self.received_packets.extend(packets);
+        }
+    }
+
     pub fn handle_event(&mut self, event: mio::Event)
         -> Result<(), Error> {
         if event.token() == self.token {
             if event.kind().is_readable() {
-                println!("socket is readable, reading packets now");
-
-                let mut packets = Vec::new();
-                self.reader.read(&mut self.stream, &mut packets)?;
-                self.received_packets.extend(packets);
+                if let Stream::Connected(ref mut stream) = self.stream {
+                    let mut packets = Vec::new();
+                    self.reader.read(stream, &mut packets)?;
+                    self.received_packets.extend(packets);
+                } else {
+                    panic!("foo");
+                }
             }
 
             if event.kind().is_writable() {
-                if let Some(raw_packet) = self.queued_packets.pop_front() {
-                    println!("socket is writable and we have a queued packet, sending");
+                let current_stream = mem::replace(&mut self.stream, Stream::None);
 
-                    self.stream.write_u32::<BigEndian>(raw_packet.len() as u32)?;
-                    self.stream.write(&raw_packet)?;
-                }
+                self.stream = match current_stream {
+                    Stream::PendingConnected(stream) => {
+                        use std::os::unix::io::AsRawFd;
+                        use libc;
+
+                        let fd = stream.as_raw_fd();
+
+
+                        // SslStream doesn't seem to properly support non-blocking sockets.
+                        // We temporarily turn off the flag until the handshake finishes.
+                        let status = unsafe { libc::fcntl(fd, libc::F_SETFL, libc::fcntl(fd, libc::F_GETFL, 0) & !libc::O_NONBLOCK) };
+                        if status == -1 { panic!("could not mark socket as blocking"); }
+
+                        let mut connector_builder = ssl::SslConnectorBuilder::new(ssl::SslMethod::tls()).unwrap();
+                        connector_builder.builder_mut().set_verify(ssl::SSL_VERIFY_NONE);
+
+                        let connector = connector_builder.build();
+                        let ssl_stream = connector.danger_connect_without_providing_domain_for_certificate_verification_and_server_name_indication(stream).unwrap();
+
+                        let status = unsafe { libc::fcntl(fd, libc::F_SETFL, libc::fcntl(fd, libc::F_GETFL, 0) | libc::O_NONBLOCK) };
+                        if status == -1 { panic!("could not mark socket as non-blocking"); }
+
+                        Stream::Connected(ssl_stream)
+                    },
+                    Stream::Connected(mut stream) => {
+                        if let Some(raw_packet) = self.queued_packets.pop_front() {
+                            stream.write_u32::<BigEndian>(raw_packet.len() as u32)?;
+                            stream.write(&raw_packet)?;
+                        }
+                        Stream::Connected(stream)
+                    },
+                    Stream::None => unreachable!(),
+                };
             }
+        } else {
+            unreachable!();
         }
         Ok(())
     }
@@ -141,7 +192,14 @@ impl Reader
                 let bytes_remaining = mem::size_of::<SizePrefix>() - bytes.len();
 
                 let extra_bytes: Result<Vec<_>, _> = read.bytes().take(bytes_remaining).collect();
-                bytes.extend(extra_bytes?);
+
+                match extra_bytes {
+                    Ok(extra_bytes) => bytes.extend(extra_bytes),
+                    Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                        // do nothing
+                    },
+                    Err(e) => return Err(e)?,
+                }
 
                 if bytes.len() == mem::size_of::<SizePrefix>() {
                     let body_size = BigEndian::read_u32(&bytes);

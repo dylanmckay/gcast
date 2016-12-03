@@ -4,8 +4,9 @@ use gcast::back;
 
 use std::time::Duration;
 
-fn main() {
-    let poll_duration = Duration::from_secs(1);
+#[allow(dead_code)]
+fn discover() -> Vec<gcast::DeviceInfo> {
+    let poll_duration = Duration::from_secs(3);
     let mut cast_device_infos = Vec::new();
 
     gcast::discovery::run(poll_duration, |device_info| {
@@ -13,47 +14,60 @@ fn main() {
         cast_device_infos.push(device_info);
     }).unwrap();
 
-    for device_info in cast_device_infos {
-        let mut io = gcast::back::net::Io::new().unwrap();
-        let mut connection = gcast::back::Connection::connect_to(&device_info, &mut io).unwrap();
+    cast_device_infos
+}
 
-        // Establish a virtual connection
-        {
-            let mut message = back::protocol::CastMessage::new();
+fn main() {
+    let device_info = gcast::DeviceInfo {
+        ip_addr: "192.168.1.102".parse().unwrap(),
+        uuid: "d7288042-190b-5974-aa3b-2558f1cb0c0e".parse().unwrap(),
+    };
 
-            message.set_protocol_version(back::protocol::CastMessage_ProtocolVersion::CASTV2_1_0);
-            message.set_source_id("sender-0".to_owned());
-            message.set_destination_id("receiver-0".to_owned());
-            message.set_namespace("urn:x-cast:com.google.cast.tp.connection".to_owned());
-            message.set_payload_type(back::protocol::CastMessage_PayloadType::STRING);
-            message.set_payload_utf8("{ \"type\": \"CONNECT\" }".to_owned());
+    let mut io = gcast::back::net::Io::new().unwrap();
+    let mut connection = gcast::back::Connection::connect_to(&device_info, &mut io).unwrap();
 
-            connection.send(&message).unwrap();
-        }
+    // Establish a virtual connection
+    {
+        let mut message = back::protocol::CastMessage::new();
 
-        {
-            let mut message = back::protocol::CastMessage::new();
+        message.set_protocol_version(back::protocol::CastMessage_ProtocolVersion::CASTV2_1_0);
+        message.set_source_id("sender-0".to_owned());
+        message.set_destination_id("receiver-0".to_owned());
+        message.set_namespace("urn:x-cast:com.google.cast.tp.connection".to_owned());
+        message.set_payload_type(back::protocol::CastMessage_PayloadType::STRING);
+        message.set_payload_utf8("{ \"type\": \"CONNECT\" }".to_owned());
 
-            message.set_protocol_version(back::protocol::CastMessage_ProtocolVersion::CASTV2_1_0);
-            message.set_source_id("sender-0".to_owned());
-            message.set_destination_id("receiver-0".to_owned());
-            message.set_namespace("urn:x-cast:com.google.cast.receiver".to_owned());
-            message.set_payload_type(back::protocol::CastMessage_PayloadType::STRING);
-            message.set_payload_utf8("{ \"type\": \"GET_STATUS\" }".to_owned());
+        connection.send(&message).unwrap();
+    }
 
-            connection.send(&message).unwrap();
-        }
+    {
+        let mut message = back::protocol::CastMessage::new();
 
+        message.set_protocol_version(back::protocol::CastMessage_ProtocolVersion::CASTV2_1_0);
+        message.set_source_id("sender-0".to_owned());
+        message.set_destination_id("receiver-0".to_owned());
+        message.set_namespace("urn:x-cast:com.google.cast.receiver".to_owned());
+        message.set_payload_type(back::protocol::CastMessage_PayloadType::STRING);
+        message.set_payload_utf8("{ \"type\": \"GET_STATUS\" }".to_owned());
+
+        connection.send(&message).unwrap();
+    }
+
+    'poll_loop: loop {
         io.poll.poll(&mut io.events, None).unwrap();
 
-        loop {
-            for event in io.events.iter() {
-                connection.handle_event(event).unwrap();
+        for event in io.events.iter()  {
+            if event.kind().is_hup() {
+                break 'poll_loop;
+            }
 
-                for packet in connection.receive() {
-                    println!("packet: {:#?}", packet);
-                }
+            connection.handle_event(event).unwrap();
+
+            for packet in connection.receive().unwrap() {
+                println!("packet: {:#?}", packet);
             }
         }
     }
+
+    println!("Cast device disconnected");
 }

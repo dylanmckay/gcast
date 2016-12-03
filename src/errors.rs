@@ -7,5 +7,6 @@ error_chain! {
         ::mdns::Error, Dns;
         ::std::io::Error, Io;
         ::protobuf::error::ProtobufError, Protobuf;
+        ::openssl::ssl::HandshakeError<::mio::tcp::TcpStream>, SslHandshakeError;
     }
 }

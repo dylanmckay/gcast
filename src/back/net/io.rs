@@ -16,7 +16,7 @@ impl Io
         Ok(Io {
             poll: mio::Poll::new()?,
             events: mio::Events::with_capacity(1024),
-            token_accumulator: 0,
+            token_accumulator: 100,
         })
     }
 

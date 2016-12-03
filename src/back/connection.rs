@@ -3,12 +3,13 @@ use discovery;
 use back::{net, protocol};
 
 use protobuf::Message;
+use protobuf;
 use mio;
 
 /// A connection to a Cast device.
 pub struct Connection
 {
-    transport: net::Transport,
+    pub transport: net::Transport,
 }
 
 impl Connection
@@ -28,8 +29,12 @@ impl Connection
     }
 
     /// Consumes all packets that have been received.
-    pub fn receive(&mut self) -> ::std::collections::vec_deque::Drain<Vec<u8>> {
-        self.transport.receive()
+    pub fn receive(&mut self) -> Result<::std::vec::IntoIter<protocol::CastMessage>, Error> {
+        let result: Result<Vec<protocol::CastMessage>, _> = self.transport.receive().map(|raw_packet| {
+            protobuf::parse_from_bytes(&raw_packet)
+        }).collect();
+
+        Ok(result?.into_iter())
     }
 
     /// Handles an IO event.
