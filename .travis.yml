@@ -4,3 +4,12 @@ rust:
   - nightly
   - stable
   - beta
+
+addons:
+  apt:
+    packages:
+    - protobuf-compiler
+
+before_script:
+  - cargo install protobuf
+  - export PATH=$PATH:~/.cargo/bin
