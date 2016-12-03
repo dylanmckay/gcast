@@ -1,7 +1,5 @@
 extern crate gcast;
 
-use gcast::back;
-
 use std::time::Duration;
 
 #[allow(dead_code)]
@@ -24,34 +22,10 @@ fn main() {
     };
 
     let mut io = gcast::back::net::Io::new().unwrap();
-    let mut connection = gcast::back::Connection::connect_to(&device_info, &mut io).unwrap();
-
-    // Establish a virtual connection
-    connection.send(&back::protocol::Message {
-        source: back::protocol::EndpointName("sender-0".to_owned()),
-        destination: back::protocol::EndpointName("receiver-0".to_owned()),
-        namespace: back::protocol::namespace::connection(),
-        kind: back::protocol::MessageKind::Connect,
-    }).expect("failed to send CONNECT");
-
-    // Get the current status of the Cast device.
-    connection.send(&back::protocol::Message {
-        source: back::protocol::EndpointName("sender-0".to_owned()),
-        destination: back::protocol::EndpointName("receiver-0".to_owned()),
-        namespace: back::protocol::namespace::receiver(),
-        kind: back::protocol::MessageKind::GetStatus,
-    }).expect("failed to send CONNECT");
+    let mut device = gcast::Device::connect(device_info, &mut io).unwrap();
 
     /// Launch the YouTube app.
-    connection.send(&back::protocol::Message {
-        source: back::protocol::EndpointName("sender-0".to_owned()),
-        destination: back::protocol::EndpointName("receiver-0".to_owned()),
-        namespace: back::protocol::namespace::receiver(),
-        kind: back::protocol::MessageKind::Launch {
-            app_id: "YouTube".to_owned(),
-            request_id: 1,
-        },
-    }).expect("failed to send LAUNCH");
+    device.launch_youtube().unwrap();
 
     'poll_loop: loop {
         io.poll.poll(&mut io.events, Some(Duration::from_millis(200))).unwrap();
@@ -61,28 +35,7 @@ fn main() {
                 break 'poll_loop;
             }
 
-            connection.handle_event(event).unwrap();
-        }
-
-        for message in connection.receive().unwrap() {
-            match message.kind {
-                back::protocol::MessageKind::Ping => {
-                    println!("received PING, responding with PONG: {:#?}", message);
-
-                    connection.send(&back::protocol::Message {
-                        source: message.destination.clone(),
-                        destination: message.source.clone(),
-                        namespace: message.namespace.clone(),
-                        kind: back::protocol::MessageKind::Pong,
-                    }).expect("failed to send PONG");
-                },
-                back::protocol::MessageKind::ReceiverStatus { status }=> {
-                    println!("receiver status: {}", status);
-                },
-                msg => {
-                    println!("received message: {:?}", msg);
-                },
-            }
+            device.handle_event(event).unwrap();
         }
     }
 
