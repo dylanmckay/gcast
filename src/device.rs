@@ -1,4 +1,4 @@
-use {DeviceInfo, Error};
+use {DeviceInfo, Status, Error};
 use back;
 
 use mio;
@@ -6,20 +6,29 @@ use mio;
 /// A Cast device.
 pub struct Device
 {
+    /// Information about how to connect to the device.
     info: DeviceInfo,
+    /// The current status of the receiver.
+    /// This will be set and updated upon receiving a
+    /// `RECEIVER_STATUS` message.
+    status: Option<Status>,
+    /// The network connection.
     connection: back::Connection,
 }
 
 impl Device
 {
+    /// Create a new device instance.
     pub fn new(info: DeviceInfo,
                connection: back::Connection) -> Self {
         Device {
             info: info,
             connection: connection,
+            status: None,
         }
     }
 
+    /// Connect to a receiver.
     pub fn connect(info: DeviceInfo, io: &mut back::net::Io)
         -> Result<Self, Error> {
         let mut connection = back::Connection::connect_to(&info, io)?;
@@ -35,6 +44,7 @@ impl Device
         Ok(Device::new(info, connection))
     }
 
+    /// Launch the YouTube app.
     pub fn launch_youtube(&mut self) -> Result<(), Error> {
         self.connection.send(&back::protocol::Message {
             source: back::protocol::EndpointName("sender-0".to_owned()),
@@ -48,15 +58,20 @@ impl Device
 
     }
 
+    /// Handle an IO event.
     pub fn handle_event(&mut self, event: mio::Event) -> Result<(), Error> {
         self.connection.handle_event(event)?;
-        self.tick()
+        self.process_incoming()
     }
 
     /// Gets information about the Cast device.
     pub fn info(&self) -> &DeviceInfo { &self.info }
 
-    fn tick(&mut self) -> Result<(), Error> {
+    /// Get the current status of the receiver.
+    pub fn status(&self) -> Option<&Status> { self.status.as_ref() }
+
+    /// Process all incoming messages.
+    fn process_incoming(&mut self) -> Result<(), Error> {
         for message in self.connection.receive()? {
             match message.kind {
                 back::protocol::MessageKind::Ping => {

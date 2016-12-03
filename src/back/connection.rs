@@ -2,7 +2,6 @@ use Error;
 use discovery;
 use back::{net, protocol};
 
-use protobuf;
 use mio;
 
 /// A connection to a Cast device.
@@ -22,9 +21,7 @@ impl Connection
 
     /// Sends a packet through the connection.
     pub fn send(&mut self, message: &protocol::Message) -> Result<(), Error> {
-        use protobuf::Message;
-
-        let bytes = message.as_wire_message().write_to_bytes()?;
+        let bytes = message.as_raw_bytes()?;
         self.transport.send(bytes)?;
         Ok(())
     }
@@ -32,8 +29,7 @@ impl Connection
     /// Consumes all packets that have been received.
     pub fn receive(&mut self) -> Result<::std::vec::IntoIter<protocol::Message>, Error> {
         let result: Result<Vec<protocol::Message>, Error> = self.transport.receive().map(|raw_packet| {
-            let wire_message: protocol::wire::CastMessage = protobuf::parse_from_bytes(&raw_packet)?;
-            let message = protocol::Message::from_wire_message(&wire_message)?;
+            let message = protocol::Message::from_raw_bytes(&raw_packet)?;
             Ok(message)
         }).collect();
 

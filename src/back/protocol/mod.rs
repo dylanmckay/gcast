@@ -1,9 +1,18 @@
+#![recursion_limit = "1024"]
+
 pub extern crate gcast_wire as wire;
 
 pub use self::message::{Message, MessageKind, Namespace, EndpointName};
+pub use self::status::{Status, Volume, VolumeLevel};
+pub use self::errors::{Error, ErrorKind};
 
 pub mod message;
+pub mod status;
+pub mod errors;
 
+extern crate protobuf;
+#[macro_use]
+extern crate error_chain;
 #[macro_use]
 extern crate json;
 

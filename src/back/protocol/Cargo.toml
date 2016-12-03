@@ -15,4 +15,6 @@ path = "mod.rs"
 
 [dependencies]
 gcast-wire = { path = "wire" }
+error-chain = "0.6"
+protobuf = "1.0.24"
 json = "0.11"

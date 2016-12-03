@@ -1,4 +1,8 @@
+use {Error, ErrorKind};
+
 use wire;
+
+use protobuf;
 use json;
 
 /// The version of the CAST protocol we are using.
@@ -55,13 +59,21 @@ pub enum MessageKind
 
 impl Message
 {
+    /// Reads a message from a set of raw bytes that contain the message.
+    pub fn from_raw_bytes(data: &[u8]) -> Result<Self, Error> {
+        let wire_message: wire::CastMessage = protobuf::parse_from_bytes(data)?;
+        let message = Message::from_wire_message(&wire_message)?;
+        Ok(message)
+    }
+
     /// Creates a message from a wire message.
-    pub fn from_wire_message(message: &wire::CastMessage) -> Result<Self, String> {
+    pub fn from_wire_message(message: &wire::CastMessage) -> Result<Self, Error> {
         let kind = match message.get_payload_type() {
             wire::CastMessage_PayloadType::STRING => {
                 let data = json::parse(message.get_payload_utf8()).unwrap();
 
-                match data["type"].as_str().expect("type is not string") {
+                let type_name = data["type"].as_str().unwrap();
+                match type_name {
                     "CONNECT" => MessageKind::Connect,
                     "CLOSE" => MessageKind::Close,
                     "PING" => MessageKind::Ping,
@@ -73,11 +85,11 @@ impl Message
                             status: message.get_payload_utf8().to_string(),
                         }
                     },
-                    _ => return Err(format!("unknown packet type: {}", data["type"])),
+                    _ => return Err(ErrorKind::UnknownMessageType(type_name.to_owned()).into()),
                 }
             },
             wire::CastMessage_PayloadType::BINARY => {
-                return Err("unimplemented binary packet type".to_string());
+                return Err(ErrorKind::UnknownMessageType("binary message".to_owned()).into());
             },
         };
 
@@ -87,6 +99,14 @@ impl Message
             namespace: Namespace(message.get_namespace().to_owned()),
             kind: kind,
         })
+    }
+
+    /// Gets the raw bytes that represent the message.
+    pub fn as_raw_bytes(&self) -> Result<Vec<u8>, Error> {
+        use protobuf::Message;
+
+        let bytes = self.as_wire_message().write_to_bytes()?;
+        Ok(bytes)
     }
 
     /// Builds a wire message.

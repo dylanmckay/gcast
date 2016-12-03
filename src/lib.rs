@@ -3,6 +3,7 @@
 pub use self::errors::{Error, ErrorKind};
 pub use self::discovery::DeviceInfo;
 pub use self::device::Device;
+pub use self::back::protocol::{Status, Volume, VolumeLevel};
 
 pub mod discovery;
 pub mod errors;
@@ -13,7 +14,6 @@ extern crate mdns;
 extern crate mio;
 extern crate byteorder;
 extern crate uuid;
-extern crate protobuf;
 #[macro_use]
 extern crate error_chain;
 extern crate openssl;
