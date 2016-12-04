@@ -1,6 +1,6 @@
 [package]
 name = "gcast"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Dylan McKay <dylanmckay34@gmail.com>"]
 
 description = "A library for using Google Cast devices"
@@ -13,7 +13,7 @@ keywords = ["cast", "chromecast"]
 [workspace]
 
 [dependencies]
-gcast-protocol = { version = "0.1.1", path = "src/back/protocol" }
+gcast-protocol = { version = "0.1.2", path = "src/back/protocol" }
 mdns = "0.1.4"
 mio = "0.6"
 uuid = "0.3"

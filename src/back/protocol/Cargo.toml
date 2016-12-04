@@ -1,6 +1,6 @@
 [package]
 name = "gcast-protocol"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Dylan McKay <dylanmckay34@gmail.com>"]
 
 description = "A library for using Google Cast devices"
@@ -14,7 +14,7 @@ keywords = ["cast", "chromecast"]
 path = "mod.rs"
 
 [dependencies]
-gcast-wire = { version = "0.1.1", path = "wire" }
+gcast-wire = { version = "0.1.2", path = "wire" }
 error-chain = "0.6"
 protobuf = "1.0.24"
 json = "0.11"

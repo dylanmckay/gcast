@@ -1,6 +1,6 @@
 [package]
 name = "gcast-wire"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Dylan McKay <dylanmckay34@gmail.com>"]
 
 description = "A library for using Google Cast devices"
