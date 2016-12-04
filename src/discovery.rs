@@ -18,6 +18,8 @@ pub struct DeviceInfo
 /// Performs Cast discovery.
 pub fn run<F>(duration: Duration, mut f: F) -> Result<(), Error>
     where F: FnMut(DeviceInfo)  {
+    let mut discovered_addresses = Vec::new();
+
     mdns::discover("_googlecast._tcp.local", Some(duration), |response| {
         if response.records().next().is_none() { return };
 
@@ -34,12 +36,15 @@ pub fn run<F>(duration: Duration, mut f: F) -> Result<(), Error>
             }
         }
 
+        let address = address.unwrap();
         let uuid = uuid_str.unwrap().parse().expect("invalid device UUID");
 
-        f(DeviceInfo {
-            ip_addr: address.unwrap(),
-            uuid: uuid,
-        })
+        // Do not discover the same Cast IP address more than once.
+        if !discovered_addresses.iter().any(|discovered_address| discovered_address == &address) {
+            f(DeviceInfo { ip_addr: address, uuid: uuid })
+        } else {
+            discovered_addresses.push(address);
+        }
 
     })?;
     Ok(())
