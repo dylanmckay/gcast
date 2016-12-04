@@ -165,6 +165,7 @@ This describes the highest level of the protocol - the format of the different m
 | `RECEIVER_STATUS`         | `{ "type": "RECEIVER_STATUS", "requestId: 31432", "status": { ... } }`       |
 | `LAUNCH`                  | `{ "type": "LAUNCH", "appId": "YouTube" }`                                   |
 | `STOP`                    | `{ "type": "STOP", "sessionId": "f2f6a2c3-2c92-4c43-9fb2-ca0b2872a75d" }`    |
+| `SET_VOLUME`              | `{ "type": "SET_VOLUME", "volume" { ... } }`                                 |
 
 
 #### `CONNECT` (Client -> Cast device)
@@ -309,7 +310,8 @@ When there is at least one running application, an extra array-valued entry is p
 }
 ```
 
-#### `LAUNCH`
+#### `LAUNCH` (Client -> Cast device)
+
 
 This is a textual message with one data field: `appId`.
 
@@ -322,7 +324,7 @@ will have details about the application session once it has launched.
 
 It is always transmitted on the `urn:x-cast:com.google.cast.receiver` namespace.
 
-#### `STOP`
+#### `STOP` (Client -> Cast device)
 
 This is a textual message with one data field: `sessionId`.
 
@@ -337,6 +339,29 @@ a `RECEIVER_STATUS` message from the Cast device.
     "sessionId": "f2f6a2c3-2c92-4c43-9fb2-ca0b2872a75d"
 }
 ```
+
+It is always transmitted on the `urn:x-cast:com.google.cast.receiver` namespace.
+
+#### `SET_VOLUME` (Client -> Cast device)
+
+This is a textual message containing a JSON object describing the new volume.
+
+Unmute the receiver and set the volume to 75%:
+
+```json
+{
+    "type": "SET_VOLUME",
+    "volume": {
+        "muted": false,
+        "level": 0.75
+    }
+}
+```
+
+The `volume` object does not need to have both `muted` and `level`, you only need
+to specify the properties you wish to change.
+
+Set the vol
 
 It is always transmitted on the `urn:x-cast:com.google.cast.receiver` namespace.
 

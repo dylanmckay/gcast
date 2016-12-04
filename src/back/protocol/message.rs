@@ -1,4 +1,4 @@
-use {Status, ApplicationId, SessionId, Error, ErrorKind};
+use {Status, ApplicationId, SessionId, VolumeLevel, Error, ErrorKind};
 
 use wire;
 
@@ -58,6 +58,10 @@ pub enum MessageKind
         /// The ID of the session.
         session_id: SessionId,
     },
+    SetVolume {
+        level: Option<VolumeLevel>,
+        muted: Option<bool>,
+    },
     /// Tell the sender about the current receiver status.
     ReceiverStatus(Status),
 }
@@ -90,6 +94,7 @@ impl Message
                         let session_id = SessionId(Uuid::parse_str(&session_id_text)?);
                         MessageKind::Stop { session_id: session_id }
                     },
+                    "SET_VOLUME" => unimplemented!(),
                     "RECEIVER_STATUS" => {
                         let status_data = &data["status"];
                         let status = Status::from_json(&status_data)?;
@@ -162,6 +167,18 @@ impl Message
                 message.set_payload_utf8(json::stringify(object! {
                     "type" => "STOP",
                     "sessionId" => session_id.0.to_string()
+                }));
+            },
+            MessageKind::SetVolume { level, muted } => {
+                message.set_payload_type(wire::CastMessage_PayloadType::STRING);
+                let mut volume = object! { };
+
+                if let Some(level) = level { volume["level"] = level.0.into() };
+                if let Some(muted) = muted { volume["muted"] = muted.into() };
+
+                message.set_payload_utf8(json::stringify(object! {
+                    "type" => "SET_VOLUME",
+                    "volume" => volume
                 }));
             },
             MessageKind::ReceiverStatus(..) => unimplemented!(),

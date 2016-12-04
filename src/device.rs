@@ -1,6 +1,7 @@
 //! The core `Device` type.
 
-use {DeviceInfo, ApplicationId, SessionId, Status, Event, Error};
+use {DeviceInfo, ApplicationId, SessionId, Status, Event, Error,
+     VolumeLevel};
 use back;
 
 use std::collections::VecDeque;
@@ -84,6 +85,21 @@ impl Device
         })
     }
 
+    /// Sets the volume of the Cast device.
+    /// **NOTE**: This API is likely to change.
+    pub fn set_volume(&mut self, level: Option<VolumeLevel>, muted: Option<bool>)
+        -> Result<(), Error> {
+        self.connection.send(&back::protocol::Message {
+            source: back::protocol::EndpointName("sender-0".to_owned()),
+            destination: back::protocol::EndpointName("receiver-0".to_owned()),
+            namespace: back::protocol::namespace::receiver(),
+            kind: back::protocol::MessageKind::SetVolume {
+                level: level,
+                muted: muted,
+            },
+        })
+    }
+
     /// Handle an IO event.
     pub fn handle_io(&mut self, event: mio::Event) -> Result<(), Error> {
         self.connection.handle_event(event)?;
@@ -106,8 +122,6 @@ impl Device
         for message in self.connection.receive()? {
             match message.kind {
                 back::protocol::MessageKind::Ping => {
-                    println!("received PING, responding with PONG: {:#?}", message);
-
                     self.connection.send(&back::protocol::Message {
                         source: message.destination.clone(),
                         destination: message.source.clone(),
@@ -120,7 +134,7 @@ impl Device
                     self.add_event(Event::StatusUpdated);
                 },
                 msg => {
-                    println!("received message: {:?}", msg);
+                    println!("received unimplemented message: {:?}", msg);
                 },
             }
         }

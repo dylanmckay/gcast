@@ -143,8 +143,6 @@ impl Transport
                     },
                     Stream::Connected(mut stream) => {
                         if let Some(raw_packet) = self.queued_packets.pop_front() {
-                            println!("sending packet");
-
                             stream.write_u32::<BigEndian>(raw_packet.len() as u32)?;
                             stream.write(&raw_packet)?;
                         }

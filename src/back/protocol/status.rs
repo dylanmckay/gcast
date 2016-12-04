@@ -1,13 +1,9 @@
-use {ApplicationId, Error};
+use {ApplicationId, VolumeLevel, Error};
 
 use std::fmt;
 
 use uuid::Uuid;
 use json;
-
-/// A float value in [0..1] that represents the magnitude of volume.
-#[derive(Clone, PartialEq)]
-pub struct VolumeLevel(pub f32);
 
 /// Stores the status of a Cast receiver.
 #[derive(Clone, Debug, PartialEq)]

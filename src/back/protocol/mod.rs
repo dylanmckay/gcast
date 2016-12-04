@@ -3,7 +3,7 @@
 pub extern crate gcast_wire as wire;
 
 pub use self::message::{Message, MessageKind, Namespace, EndpointName};
-pub use self::status::{Status, Volume, VolumeLevel};
+pub use self::status::{Status, Volume};
 pub use self::errors::{Error, ErrorKind};
 
 pub mod message;
@@ -24,6 +24,10 @@ pub struct ApplicationId(pub String);
 /// A session ID of a running application.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct SessionId(pub uuid::Uuid);
+
+/// A float value in [0..1] that represents the magnitude of volume.
+#[derive(Copy, Clone, PartialEq)]
+pub struct VolumeLevel(pub f32);
 
 /// Namespace definition constants.
 pub mod namespace {

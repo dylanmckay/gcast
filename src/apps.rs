@@ -11,4 +11,7 @@ macro_rules! define_application {
     }
 }
 
+// The YouTube app
 define_application!(youtube => "YouTube");
+// The 'Chrome mirroring' functionality
+define_application!(mirroring => "0F5096E8");

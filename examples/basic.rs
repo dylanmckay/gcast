@@ -16,6 +16,7 @@ fn main() {
 
     /// Launch the YouTube app.
     device.launch(gcast::apps::youtube()).unwrap();
+    device.set_volume(None, Some(true)).unwrap();
 
     'poll_loop: loop {
         io.poll.poll(&mut io.events, Some(Duration::from_millis(200))).unwrap();
