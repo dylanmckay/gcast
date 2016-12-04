@@ -1,9 +1,11 @@
-use {Status, ApplicationId, Error, ErrorKind};
+use {Status, ApplicationId, SessionId, Error, ErrorKind};
 
 use wire;
 
 use protobuf;
 use json;
+
+use uuid::Uuid;
 
 /// The version of the CAST protocol we are using.
 const PROTOCOL_VERSION: wire::CastMessage_ProtocolVersion = wire::CastMessage_ProtocolVersion::CASTV2_1_0;
@@ -51,6 +53,11 @@ pub enum MessageKind
         /// A request identifier.
         request_id: i64,
     },
+    /// Stop a running instance of an application.
+    Stop {
+        /// The ID of the session.
+        session_id: SessionId,
+    },
     /// Tell the sender about the current receiver status.
     ReceiverStatus(Status),
 }
@@ -78,6 +85,11 @@ impl Message
                     "PONG" => MessageKind::Pong,
                     "GET_STATUS" => MessageKind::GetStatus,
                     "LAUNCH" => unimplemented!(),
+                    "STOP" => {
+                        let session_id_text = data["sessionId"].as_str().unwrap();
+                        let session_id = SessionId(Uuid::parse_str(&session_id_text)?);
+                        MessageKind::Stop { session_id: session_id }
+                    },
                     "RECEIVER_STATUS" => {
                         let status_data = &data["status"];
                         let status = Status::from_json(&status_data)?;
@@ -143,6 +155,13 @@ impl Message
                     "type" => "LAUNCH",
                     "appId" => &app_id.0[..],
                     "requestId" => request_id
+                }));
+            },
+            MessageKind::Stop { session_id } => {
+                message.set_payload_type(wire::CastMessage_PayloadType::STRING);
+                message.set_payload_utf8(json::stringify(object! {
+                    "type" => "STOP",
+                    "sessionId" => session_id.0.to_string()
                 }));
             },
             MessageKind::ReceiverStatus(..) => unimplemented!(),

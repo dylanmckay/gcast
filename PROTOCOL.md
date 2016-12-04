@@ -155,15 +155,16 @@ This describes the highest level of the protocol - the format of the different m
 #### Summary
 
 
-| Message                   | Example payload                                                        |
-|---------------------------|------------------------------------------------------------------------|
-| `CONNECT`                 | `{ "type": "CONNECT" }`                                                |
-| `CLOSE`                   | `{ "type": "CLOSE" }`                                                  |
-| `PING`                    | `{ "type": "PING" }`                                                   |
-| `PONG`                    | `{ "type": "PONG" }`                                                   |
-| `GET_STATUS`              | `{ "type": "GET_STATUS" }`                                             |
-| `RECEIVER_STATUS`         | `{ "type": "RECEIVER_STATUS", "requestId: 31432", "status": { ... } }` |
-| `LAUNCH`                  | `{ "type": "LAUNCH", appId: "YouTube" }`                               |
+| Message                   | Example payload                                                              |
+|---------------------------|------------------------------------------------------------------------------|
+| `CONNECT`                 | `{ "type": "CONNECT" }`                                                      |
+| `CLOSE`                   | `{ "type": "CLOSE" }`                                                        |
+| `PING`                    | `{ "type": "PING" }`                                                         |
+| `PONG`                    | `{ "type": "PONG" }`                                                         |
+| `GET_STATUS`              | `{ "type": "GET_STATUS" }`                                                   |
+| `RECEIVER_STATUS`         | `{ "type": "RECEIVER_STATUS", "requestId: 31432", "status": { ... } }`       |
+| `LAUNCH`                  | `{ "type": "LAUNCH", "appId": "YouTube" }`                                   |
+| `STOP`                    | `{ "type": "STOP", "sessionId": "f2f6a2c3-2c92-4c43-9fb2-ca0b2872a75d" }`    |
 
 
 #### `CONNECT` (Client -> Cast device)
@@ -318,6 +319,24 @@ This is a textual message with one data field: `appId`.
 
 Upon sending a `LAUNCH` message, the Cast device will send `RECEIVER_STATUS` updates which
 will have details about the application session once it has launched.
+
+It is always transmitted on the `urn:x-cast:com.google.cast.receiver` namespace.
+
+#### `STOP`
+
+This is a textual message with one data field: `sessionId`.
+
+This message will stop an application running with the given session identifier.
+
+A list of running applications and their session ids can be obtained from reading
+a `RECEIVER_STATUS` message from the Cast device.
+
+```json
+{
+    "type": "STOP",
+    "sessionId": "f2f6a2c3-2c92-4c43-9fb2-ca0b2872a75d"
+}
+```
 
 It is always transmitted on the `urn:x-cast:com.google.cast.receiver` namespace.
 

@@ -1,6 +1,6 @@
 //! The core `Device` type.
 
-use {DeviceInfo, ApplicationId, Status, Event, Error};
+use {DeviceInfo, ApplicationId, SessionId, Status, Event, Error};
 use back;
 
 use std::collections::VecDeque;
@@ -55,6 +55,7 @@ impl Device
         Ok(Device::new(info, connection))
     }
 
+    /// Launch an application.
     pub fn launch(&mut self, app_id: ApplicationId) -> Result<(), Error> {
         self.connection.send(&back::protocol::Message {
             source: back::protocol::EndpointName("sender-0".to_owned()),
@@ -63,6 +64,22 @@ impl Device
             kind: back::protocol::MessageKind::Launch {
                 app_id: app_id,
                 request_id: 1,
+            },
+        })
+    }
+
+    /// Stop a running application.
+    ///
+    /// Arguments:
+    ///
+    /// * `session_id` - The identifer of the session.
+    pub fn stop(&mut self, session_id: SessionId) -> Result<(), Error> {
+        self.connection.send(&back::protocol::Message {
+            source: back::protocol::EndpointName("sender-0".to_owned()),
+            destination: back::protocol::EndpointName("receiver-0".to_owned()),
+            namespace: back::protocol::namespace::receiver(),
+            kind: back::protocol::MessageKind::Stop {
+                session_id: session_id,
             },
         })
     }

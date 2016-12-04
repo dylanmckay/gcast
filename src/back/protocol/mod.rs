@@ -21,6 +21,10 @@ extern crate json;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ApplicationId(pub String);
 
+/// A session ID of a running application.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct SessionId(pub uuid::Uuid);
+
 /// Namespace definition constants.
 pub mod namespace {
     use super::Namespace;

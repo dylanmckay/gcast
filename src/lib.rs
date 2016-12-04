@@ -28,7 +28,7 @@
 pub use self::errors::{Error, ErrorKind};
 pub use self::discovery::DeviceInfo;
 pub use self::device::Device;
-pub use self::back::protocol::{ApplicationId, Status, Volume, VolumeLevel};
+pub use self::back::protocol::{ApplicationId, SessionId, Status, Volume, VolumeLevel};
 pub use self::event::Event;
 
 pub mod discovery;
