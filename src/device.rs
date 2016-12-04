@@ -12,6 +12,11 @@ use mio;
 /// If the internal event queue gets too big, truncate the oldest events.
 const EVENT_QUEUE_MAXIMUM_COUNT: usize = 500;
 
+/// The string we will use to identify ourselves in messages.
+const SENDER_ID: &'static str = "sender-0";
+/// The string we will use to identify the Cast device in messages.
+const RECEIVER_ID: &'static str = "sender-0";
+
 /// A Cast device.
 pub struct Device
 {
@@ -43,29 +48,28 @@ impl Device
     /// Connect to a receiver.
     pub fn connect(info: DeviceInfo, io: &mut back::net::Io)
         -> Result<Self, Error> {
-        let mut connection = back::Connection::connect_to(&info, io)?;
+        let connection = back::Connection::connect_to(&info, io)?;
+        let mut device = Device::new(info, connection);
 
         // Establish a virtual connection
-        connection.send(&back::protocol::Message {
-            source: back::protocol::EndpointName("sender-0".to_owned()),
-            destination: back::protocol::EndpointName("receiver-0".to_owned()),
-            namespace: back::protocol::namespace::connection(),
-            kind: back::protocol::MessageKind::Connect,
-        }).expect("failed to send CONNECT");
+        device.send_message(back::protocol::namespace::connection(),
+                            back::protocol::MessageKind::Connect)?;
 
-        Ok(Device::new(info, connection))
+        Ok(device)
+    }
+
+    /// Asks the Chromecast for its current status.
+    pub fn update_status(&mut self) -> Result<(), Error> {
+        self.send_message(back::protocol::namespace::receiver(),
+                          back::protocol::MessageKind::GetStatus)
     }
 
     /// Launch an application.
     pub fn launch(&mut self, app_id: ApplicationId) -> Result<(), Error> {
-        self.connection.send(&back::protocol::Message {
-            source: back::protocol::EndpointName("sender-0".to_owned()),
-            destination: back::protocol::EndpointName("receiver-0".to_owned()),
-            namespace: back::protocol::namespace::receiver(),
-            kind: back::protocol::MessageKind::Launch {
+        self.send_message(back::protocol::namespace::receiver(),
+            back::protocol::MessageKind::Launch {
                 app_id: app_id,
                 request_id: 1,
-            },
         })
     }
 
@@ -75,13 +79,9 @@ impl Device
     ///
     /// * `session_id` - The identifer of the session.
     pub fn stop(&mut self, session_id: SessionId) -> Result<(), Error> {
-        self.connection.send(&back::protocol::Message {
-            source: back::protocol::EndpointName("sender-0".to_owned()),
-            destination: back::protocol::EndpointName("receiver-0".to_owned()),
-            namespace: back::protocol::namespace::receiver(),
-            kind: back::protocol::MessageKind::Stop {
+        self.send_message(back::protocol::namespace::receiver(),
+            back::protocol::MessageKind::Stop {
                 session_id: session_id,
-            },
         })
     }
 
@@ -89,14 +89,10 @@ impl Device
     /// **NOTE**: This API is likely to change.
     pub fn set_volume(&mut self, level: Option<VolumeLevel>, muted: Option<bool>)
         -> Result<(), Error> {
-        self.connection.send(&back::protocol::Message {
-            source: back::protocol::EndpointName("sender-0".to_owned()),
-            destination: back::protocol::EndpointName("receiver-0".to_owned()),
-            namespace: back::protocol::namespace::receiver(),
-            kind: back::protocol::MessageKind::SetVolume {
+        self.send_message(back::protocol::namespace::receiver(),
+            back::protocol::MessageKind::SetVolume {
                 level: level,
                 muted: muted,
-            },
         })
     }
 
@@ -116,6 +112,18 @@ impl Device
 
     /// Get the current status of the receiver.
     pub fn status(&self) -> Option<&Status> { self.status.as_ref() }
+
+    /// Sends a message.
+    fn send_message(&mut self,
+                    namespace: back::protocol::Namespace,
+                    kind: back::protocol::MessageKind) -> Result<(), Error> {
+        self.connection.send(&back::protocol::Message {
+            source: back::protocol::EndpointName(SENDER_ID.to_owned()),
+            destination: back::protocol::EndpointName(RECEIVER_ID.to_owned()),
+            namespace: namespace,
+            kind: kind,
+        })
+    }
 
     /// Process all incoming messages.
     fn process_incoming(&mut self) -> Result<(), Error> {
