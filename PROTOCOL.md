@@ -164,6 +164,7 @@ This describes the highest level of the protocol - the format of the different m
 | `GET_STATUS`              | `{ "type": "GET_STATUS" }`                                                   |
 | `RECEIVER_STATUS`         | `{ "type": "RECEIVER_STATUS", "requestId: 31432", "status": { ... } }`       |
 | `LAUNCH`                  | `{ "type": "LAUNCH", "appId": "YouTube" }`                                   |
+| `LAUNCH_ERROR`            | `{ "type": "LAUNCH_ERROR", "reason": "NOT_FOUND", "requestId": 1 }`          |
 | `STOP`                    | `{ "type": "STOP", "sessionId": "f2f6a2c3-2c92-4c43-9fb2-ca0b2872a75d" }`    |
 | `SET_VOLUME`              | `{ "type": "SET_VOLUME", "volume" { ... } }`                                 |
 
@@ -323,6 +324,27 @@ Upon sending a `LAUNCH` message, the Cast device will send `RECEIVER_STATUS` upd
 will have details about the application session once it has launched.
 
 It is always transmitted on the `urn:x-cast:com.google.cast.receiver` namespace.
+
+#### `LAUNCH_ERROR` (Cast device -> Client)
+
+This is a textual message with two data fields: `reason` and `requestId`.
+
+The cast device replies with this when the client sends a `LAUNCH` that can't
+be completed.
+
+```json
+{
+    "type": "LAUNCH_ERROR",
+    "reason": "NOT_FOUND",
+    "requestId": 1
+}
+```
+
+##### Reasons
+
+Known values for the reason field.
+
+* `NOT_FOUND` - the application ID was not found
 
 #### `STOP` (Client -> Cast device)
 

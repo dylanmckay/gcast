@@ -53,6 +53,17 @@ pub enum MessageKind
         /// A request identifier.
         request_id: i64,
     },
+    /// Sent from the receiver to the client when an application
+    /// couldn't be launched.
+    LaunchError {
+        /// The textual reason why the application couldn't be launched.
+        ///
+        /// Possible values:
+        ///
+        /// * `NOT_FOUND`
+        reason: String,
+        request_id: i64,
+    },
     /// Stop a running instance of an application.
     Stop {
         /// The ID of the session.
@@ -89,6 +100,10 @@ impl Message
                     "PONG" => MessageKind::Pong,
                     "GET_STATUS" => MessageKind::GetStatus,
                     "LAUNCH" => unimplemented!(),
+                    "LAUNCH_ERROR" => MessageKind::LaunchError {
+                        reason: data["reason"].as_str().unwrap().to_owned(),
+                        request_id: data["requestId"].as_i64().unwrap(),
+                    },
                     "STOP" => {
                         let session_id_text = data["sessionId"].as_str().unwrap();
                         let session_id = SessionId(Uuid::parse_str(&session_id_text)?);
@@ -162,6 +177,7 @@ impl Message
                     "requestId" => request_id
                 }));
             },
+            MessageKind::LaunchError { .. } => unimplemented!(),
             MessageKind::Stop { session_id } => {
                 message.set_payload_type(wire::CastMessage_PayloadType::STRING);
                 message.set_payload_utf8(json::stringify(object! {

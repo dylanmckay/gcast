@@ -11,6 +11,8 @@ macro_rules! define_application {
     }
 }
 
+// The Netflix app
+define_application!(netflix => "Netflix");
 // The YouTube app
 define_application!(youtube => "YouTube");
 // The 'Chrome mirroring' functionality
